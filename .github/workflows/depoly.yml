@@ -1,0 +1,33 @@
+name: Deploy Infrastructure
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform-ansible:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init and Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Run Ansible Playbook
+        uses: dawiddr/action-ansible-playbook@v2
+        with:
+          playbook: playbook.yml
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          inventory: |
+            [web]
+            ${{ secrets.SERVER_IP }}
+            
